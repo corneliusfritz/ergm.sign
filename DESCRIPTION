@@ -1,0 +1,14 @@
+Package: ergm.sign
+Type: Package
+Title: Signed Exponential Random Graph Models
+Version: 1.0
+Date: 2022-02-18
+Author: Cornelius Fritz 
+Maintainer: Cornelius Fritz <corneliusfritz2010@gmail.com>
+Description: Estimate, Simulate, and Assess the Fit of Signed Exponential Random Graph Models!
+License: GPL-3
+Imports: Rcpp (>= 1.0.8), coda, RcppArmadillo, stringr, lpSolveAPI
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 7.1.2
+NeedsCompilation: yes
+Packaged: 2022-05-24 16:15:10 UTC; ru68yin2

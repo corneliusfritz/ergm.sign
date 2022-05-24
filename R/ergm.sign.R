@@ -1,0 +1,218 @@
+#' sergm: A package for Exponential Random Graph Models for Signed Networks
+#'
+#' The sergm package implements the tools to simulate and estimate Signed Exponential Random Graph Models. 
+#' 
+#' @section Authors: 
+#' Cornelius Fritz
+#'
+#'
+#' @docType package
+#' @name ergm.sign
+#' @useDynLib ergm.sign, .registration=TRUE
+NULL
+#> NULL
+
+
+#' Terms used in Signed Exponential Family Random Graph Models
+#'
+#' @name sergm.terms
+#' @docType package
+#' @description This page explains how to specify the network statistics \eqn{s(y)} 
+#' to functions in the [`ergm.sign`][ergm.sign] package. It also provides an indexed 
+#' list of the possible terms (and hence network statistics) visible to the sergm API. 
+#' @section Specifying models:
+#' The lhs of the formula needs to specify a numeric matrix saved in the global 
+#' environment representing the adjacency matrix of the network. As this package is 
+#' focused on modeling signed networks, this adjacency matrix should include at 
+#' least some entries with the values 1, -1, and 0. Similarly to the 
+#' definition of terms in \CRANpkg{ergm}, the rhs contains a description of the networks 
+#' terms in an additive manner. As for the naming convention of the currently implemented 
+#' network terms, the suffix \eqn{_pos} indicates that the network term only regard positive edges, 
+#' while the suffix \eqn{_neg} does the same for negative edges. If there is none of these two suffices 
+#' in the name of a term, it relates to positive and negative edges at the same time. 
+#' For instance, the formula network ~ edges_pos + edges_neg  + dyadic_cov(data = M) specifies a 
+#' model with three network terms. First, edges_pos represents a term that counts all positive edges, 
+#' i.e., where the adjacency matrix network is 1, in the network. Second, edges_neg 
+#' does the same thing only for negative edges, i.e., where the adjacency matrix network is - 1. 
+#' Finally, the term dyadic_cov specifies a dyadic exogenous covariate term that affects the propensity 
+#' of a positive and negative edges in the same manner. At the moment, only undirected networks are supported in 
+#' the network, where the matrix indicating the exogenous effect, denoted by M,  
+#' has to be of the same dimensions as the adjacency matrix, network. 
+#' 
+#' In the subsequent sections, each general type of network statistic will 
+#' be introduced separately.    
+#'  
+#' @section Edges:
+#' \enumerate{
+#' \item \code{edges_pos}:
+#' 
+#' This adds a term counting all positive edges, i.e., where the adjacency matrix network equals 1, 
+#'  in the specified network. 
+#' \item \code{edges_neg}: 
+#' 
+#' This adds a term counting all negative edges, i.e., where the adjacency matrix network equals -1, 
+#'  in the specified network. 
+#' \item \code{edges}: 
+#' 
+#' This adds a term counting any type of edges, i.e., where the adjacency matrix network is unequal to 0, 
+#'  in the specified network. 
+#' }
+#' @section Isolates:
+#' \enumerate{
+#' \item \code{isolates_pos}:
+#' 
+#' This adds a term counting all actors in the network with no positive edges. 
+#' \item \code{isolates_neg}: 
+#' 
+#' This adds a term counting all actors in the network with no negative edges. 
+#' \item \code{isolates}: 
+#' 
+#' This adds a term counting all actors in the network with no edges, be they positive or negative. 
+#' }
+#' @section Exogenous covariates:
+#' \enumerate{
+#' \item \code{cov_dyad_pos(data = M)}:
+#' 
+#' This adds a term counting all positive edges, i.e., where the adjacency matrix network equals 1, 
+#' and multiplies it with the entries of the matrix M. This is the standard way to specify exogenous covariates. 
+#' \item \code{cov_dyad_neg(data = M)}: 
+#' 
+#' This adds a term counting any type of edges, i.e., where the adjacency matrix network is unequal to 0, 
+#' and multiplies it with the entries of the matrix M. This is the standard way to specify exogenous covariates.
+#' \item \code{cov_dyad(data = M)}: 
+#' 
+#' This adds a term counting all negative edges, i.e., where the adjacency matrix network equals - 1, 
+#' and multiplies it with the entries of the matrix M. This is the standard way to specify exogenous covariates. 
+#' Contrasting the prior two terms, \code{cov_dyad} assumes that the effect of covariate \code{M} is the same on 
+#' positive and negative ties.  
+#' }
+#' @section Degree:
+#' \enumerate{
+#' \item \code{degree_pos(type = c(i:j))}:
+#' 
+#' This adds a term counting all actors in the networks that have positive degree of i, i+1, ..., j-1, and j. 
+#' The term is implemented such that one separate term is included in the model for each numeric value 
+#' included after the type argument. The positive degree of actor n is defined as the number of positive ties 
+#' actor n has in the network. 
+#' \item \code{degree_neg(type = c(i:j))}: 
+#' 
+#' This adds a term counting all actors in the networks that have negative degree of i, i+1, ..., j-1, and j. 
+#' The term is implemented such that one separate term is included in the model for each numeric value 
+#' included after the type argument. The negative degree of actor n is defined as the number of negative ties 
+#' actor n has in the network. 
+#' \item \code{degree(type = c(i:j))}: 
+#' 
+#' This adds a term counting all actors in the networks that have degree of i, i+1, ..., j-1, and j. 
+#' The term is implemented such that one separate term is included in the model for each numeric value 
+#' included after the type argument. For signed networks, the degree of actor n is defined as the number of 
+#' positive and negative ties actor n has in the network. 
+#' \item \code{gwdegree_pos(data = matrix(alpha))}:
+#' 
+#' This adds a term to the model of the geometrically weighted positive degrees. 
+#' The statistic is equal the sum of actors with a specific numer of positive degree, 
+#' and the number of actors with degree k is weighted by exp(alpha)*(1-(1-exp(-alpha))^k).  
+#' The positive degree of actor n is defined as the number of positive ties 
+#' actor n has in the network. So far, the estimation is only implemented with a 
+#' fixed value for alpha, but trying out different values for alpha and comparing the 
+#' maximized log likelihood values between them would provide a profile log-likelihood 
+#' solution to the problem. 
+#' \item \code{gwdegree_neg(data = matrix(alpha))}:
+#' 
+#' This adds a term to the model of the geometrically weighted negative degrees. 
+#' The statistic is equal the sum of actors with a specific number of negative degree, 
+#' and the number of actors with degree k is weighted by exp(alpha)*(1-(1-exp(-alpha))^k).  
+#' The negative degree of actor n is defined as the number of negative ties 
+#' actor n has in the network. 
+#' \item \code{gwdegree(data = matrix(alpha))}:
+#' 
+#' This adds a term to the model of the geometrically weighted degrees. 
+#' The statistic is equal the sum of actors with a specific number of degree, 
+#' and the number of actors with degree k is weighted by exp(alpha)*(1-(1-exp(-alpha))^k).  
+#' The degree of actor n is defined as the number of positive and negative ties 
+#' actor n has in the network.
+#' }
+#' @section Edgewise-Shared Friends: 
+#' \enumerate{
+#' \item \code{gwesf_pos(data = matrix(alpha))}:
+#' 
+#' This adds a term to the model of the geometrically weighted positive edgewise-shared friends  
+#' The statistic is equal the sum of positive edges with a specific number of positive 
+#' edgewise-shared friends. 
+#' If actors i and j are both connected via a positive edge to actors k,l and there is a
+#' positive edge between actors i and j, the number of positive edgewise-shared friends
+#' of the edge between i and j is 2. This value can lie between 0 and 
+#' n -2 (where n is the number of actors in the network). For 
+#' one value k in this range, the weight is given by by exp(alpha)*(1-(1-exp(-alpha))^k).  
+#' Relating to the structural balance theory this term translates to 
+#' clustering according to the 'friends-of-friends-are-friends' mechanism.  
+#' \item \code{gwesf_neg(data = matrix(alpha))}:
+#' 
+#' This adds a term to the model of the geometrically weighted negative edgewise-shared friends  
+#' The statistic is equal the sum of negative edges with a specific number of negative edgewise-shared friends 
+#' If actors i and j are both connected via a negative edge to actors k,l and there is a
+#' negative edge between actors i and j, the number of negative edgewise-shared partners
+#' of the edge between i and j is 2. This value can lie between 0 and 
+#' n -2 (where n is the number of actors in the network). For 
+#' one value k in this range, the weight is given by by exp(alpha)*(1-(1-exp(-alpha))^k).  
+#' Relating to the structural balance theory this term translates to 
+#' clustering according to the 'enemies-of-enemies-are-enemies' mechanism (which is not expected).  
+#' \item \code{gwese_pos(data = matrix(alpha))}:
+#' 
+#' This adds a term to the model of the geometrically weighted positive edgewise-shared enemies.   
+#' The statistic is equal the sum of positive edges with a specific number of edgewise-shared enemies. 
+#' If actors i and j are both connected via a negative edge to actors k,l and there is a
+#' positive edge between actors i and j, the number of edgewise-shared enemies
+#' of the edge between i and j is 2. This value can lie between 0 and 
+#' n -2 (where n is the number of actors in the network). For 
+#' one value k in this range, the weight is given by by exp(alpha)*(1-(1-exp(-alpha))^k).  
+#' Relating to the structural balance theory this term translates to 
+#' clustering according to the 'enemies-of-friends-are-enemies' mechanism.  
+#' \item \code{gwese_neg(data = matrix(alpha))}:
+#' 
+#' This adds a term to the model of the geometrically weighted negative edgewise-shared enemies.   
+#' The statistic is equal the sum of negative edges with a specific number of edgewise-shared enemies. 
+#' If actors i and j are both connected via a negative edge to actors k,l and there is a
+#' positive edge between actors i and j, the number of edgewise-shared enemies
+#' of the edge between i and j is 2. This value can lie between 0 and 
+#' n -2 (where n is the number of actors in the network). For 
+#' one value k in this range, the weight is given by by exp(alpha)*(1-(1-exp(-alpha))^k).  
+#' }
+#' @section  Dyadwise-Shared Partners:  
+#' \enumerate{
+#' \item \code{gwdsp_pos(data = matrix(alpha))}:
+#' 
+#' This adds a term to the model of the geometrically weighted positive dyadwise-shared partners.  
+#' The statistic is equal the sum of possible dyads with a specific number of 
+#' shared partners. 
+#' If actors i and j are both connected via a positive edge to actors k,l, 
+#' the number of positive dyadwise-shared partners
+#' of the edge between i and j is 2. Contrasting the edgewise statistics, 
+#' no edge between actors i and j is needed. This value can lie between 0 and 
+#' n -2 (where n is the number of actors in the network). For 
+#' one value k in this range, the weight is given by by exp(alpha)*(1-(1-exp(-alpha))^k).  
+#' \item \code{gwdsp_neg(data = matrix(alpha))}:
+#' 
+#' This adds a term to the model of the geometrically weighted negative dyadwise-shared partners.  
+#' The statistic is equal the sum of possible dyads with a specific number of  
+#' shared enemies. 
+#' If actors i and j are both connected via a negative edge to actors k,l, 
+#' the number of negative dyadwise-shared partners
+#' of the edge between i and j is 2. Contrasting the edgewise statistics, 
+#' no edge between actors i and j is needed. This value can lie between 0 and 
+#' n -2 (where n is the number of actors in the network). For 
+#' one value k in this range, the weight is given by by exp(alpha)*(1-(1-exp(-alpha))^k).  
+#' \item \code{gwdasp(data = matrix(alpha))}:
+#' 
+#' This adds a term to the model of the geometrically antagonistic dyadwise-shared partners.   
+#' The statistic is equal the sum of negative edges with a specific number of edgewise-shared enemies. 
+#' If actors i and j are both connected via a negative edge to actors k,l and there is a
+#' positive edge between actors i and j, the number of edgewise-shared enemies
+#' of the edge between i and j is 2. This value can lie between 0 and 
+#' n -2 (where n is the number of actors in the network). For 
+#' one value k in this range, the weight is given by by exp(alpha)*(1-(1-exp(-alpha))^k).  
+#' Relating to the structural balance theory this term translates to 
+#' clustering according to the 'enemies-of-friends-are-enemies' mechanism. 
+#' } 
+#' 
+NULL
+#> NULL
